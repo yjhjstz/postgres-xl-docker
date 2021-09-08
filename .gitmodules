@@ -1,3 +1,4 @@
 [submodule "lib/postgres-xl"]
 	path = lib/postgres-xl
-	url = git://git.postgresql.org/git/postgres-xl.git
+	url = https://github.com/yjhjstz/agensgraph-compare-orig.git
+	branch = agensgrpah_10_4-age

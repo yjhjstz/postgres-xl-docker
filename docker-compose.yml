@@ -7,9 +7,11 @@ services:
       - PG_PORT=6666
     build: .
     command: docker-cmd-gtm
+    privileged: true
     entrypoint: docker-entrypoint-gtm
     volumes:
       - db_gtm_1:/var/lib/postgresql
+      - /tmp/mls/coredumps:/tmp/coredumps
     networks:
       - db_a
     healthcheck:
@@ -23,9 +25,11 @@ services:
       - PG_PORT=5432
     build: .
     command: docker-cmd-coord
+    privileged: true
     entrypoint: docker-entrypoint-coord
     volumes:
       - db_coord_1:/var/lib/postgresql
+      - /tmp/mls/coredumps:/tmp/coredumps
     depends_on:
       - db_gtm_1
     networks:
@@ -42,9 +46,11 @@ services:
       - PG_PORT=5432
     build: .
     command: docker-cmd-coord
+    privileged: true
     entrypoint: docker-entrypoint-coord
     volumes:
       - db_coord_2:/var/lib/postgresql
+      - /tmp/mls/coredumps:/tmp/coredumps
     depends_on:
       - db_gtm_1
     networks:
@@ -61,11 +67,13 @@ services:
       - PG_PORT=5432
     build: .
     command: docker-cmd-data
+    privileged: true
     entrypoint: docker-entrypoint-data
     depends_on:
       - db_gtm_1
     volumes:
       - db_data_1:/var/lib/postgresql
+      - /tmp/mls/coredumps:/tmp/coredumps
     networks:
       - db_a
     healthcheck:
@@ -79,11 +87,13 @@ services:
       - PG_PORT=5432
     build: .
     command: docker-cmd-data
+    privileged: true
     entrypoint: docker-entrypoint-data
     depends_on:
       - db_gtm_1
     volumes:
       - db_data_2:/var/lib/postgresql
+      - /tmp/mls/coredumps:/tmp/coredumps
     networks:
       - db_a
     healthcheck:

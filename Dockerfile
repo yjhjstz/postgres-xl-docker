@@ -15,8 +15,11 @@ RUN apt-get update && \
         libreadline-dev \
         rsync \
         netcat \
-        zlib1g-dev && \
+        gdb zlib1g-dev && \
     rm -rf /var/lib/apt/lists/*
+
+RUN mkdir -p "/tmp/logs" && mkdir -p "/tmp/coredumps"
+RUN echo '/tmp/coredumps/core.%e.%p' | tee /proc/sys/kernel/core_pattern
 
 RUN useradd ${PG_USER} -d ${PG_HOME} && \
     mkdir -p ${PG_LIB} ${PG_HOME} && \
@@ -51,6 +54,8 @@ ENV PATH=${PG_LIB}/bin:$PATH \
 
 COPY bin/* ${PG_LIB}/bin/
 COPY ci/ ./ci/
+
+
 
 VOLUME ${PG_HOME}
 #===============================================================================

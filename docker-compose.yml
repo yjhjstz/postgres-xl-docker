@@ -11,7 +11,7 @@ services:
     entrypoint: docker-entrypoint-gtm
     volumes:
       - db_gtm_1:/var/lib/postgresql
-      - /tmp/mls/coredumps:/tmp/coredumps
+      - /tmp/mls/coredumps:/cores
     networks:
       - db_a
     healthcheck:
@@ -29,7 +29,7 @@ services:
     entrypoint: docker-entrypoint-coord
     volumes:
       - db_coord_1:/var/lib/postgresql
-      - /tmp/mls/coredumps:/tmp/coredumps
+      - /tmp/mls/coredumps:/cores
     depends_on:
       - db_gtm_1
     networks:
@@ -50,7 +50,7 @@ services:
     entrypoint: docker-entrypoint-coord
     volumes:
       - db_coord_2:/var/lib/postgresql
-      - /tmp/mls/coredumps:/tmp/coredumps
+      - /tmp/mls/coredumps:/cores
     depends_on:
       - db_gtm_1
     networks:
@@ -73,7 +73,7 @@ services:
       - db_gtm_1
     volumes:
       - db_data_1:/var/lib/postgresql
-      - /tmp/mls/coredumps:/tmp/coredumps
+      - /tmp/mls/coredumps:/cores
     networks:
       - db_a
     healthcheck:
@@ -93,7 +93,7 @@ services:
       - db_gtm_1
     volumes:
       - db_data_2:/var/lib/postgresql
-      - /tmp/mls/coredumps:/tmp/coredumps
+      - /tmp/mls/coredumps:/cores
     networks:
       - db_a
     healthcheck:

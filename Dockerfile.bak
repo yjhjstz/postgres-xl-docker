@@ -1,20 +1,31 @@
 #===============================================================================
 # FROMFREEZE docker.io/library/debian:9
-#FROM docker.io/library/debian@sha256:d844caef45253dab4cb7543b5781f529c1c3f140fcf9cd6172e1d6cb616a51c3
-FROM centos7:coreset
+FROM docker.io/library/debian@sha256:d844caef45253dab4cb7543b5781f529c1c3f140fcf9cd6172e1d6cb616a51c3
 
 ARG PG_HOME=/var/lib/postgresql
 ARG PG_LIB=/usr/local/lib/postgresql
 ARG PG_USER=postgres
 #-------------------------------------------------------------------------------
+RUN echo "deb http://mirrors.ustc.edu.cn/debian/ stretch main \
+deb http://mirrors.ustc.edu.cn/debian/ stretch-updates main \
+deb http://mirrors.ustc.edu.cn/debian-security stretch/updates main \
+deb https://dl.winehq.org/wine-builds/debian/ stretch main \
+deb http://httpredir.debian.org/debian/ stretch main contrib non-free" > /etc/apt/sources.list
 
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        bison \
+        build-essential \
+        daemontools \
+        flex \
+        libreadline-dev \
+        rsync \
+        netcat \
+        sudo gdb zlib1g-dev && \
+    rm -rf /var/lib/apt/lists/*
 
-RUN yum -y update;
-RUN yum install -y epel-release perl readline readline-devel zlib zlib-devel bison bison-devel flex flex-devel lz4 lz4-devel gcc
-RUN yum install -y gdb sudo vim file make cmake iproute rsync  perf strace
+RUN mkdir -p "/tmp/logs" && mkdir -p "/cores"
+CMD ["echo", "'/cores/core.%e.%p' | tee /proc/sys/kernel/core_pattern"]
 
-#RUN mkdir /cores && chmod 777 /cores
-#RUN echo '/cores/core.%e.%p' | sudo tee /proc/sys/kernel/core_pattern
 
 RUN useradd ${PG_USER} -d ${PG_HOME} && \
     mkdir -p ${PG_LIB} ${PG_HOME} && \
@@ -28,7 +39,8 @@ USER ${PG_USER}
 
 WORKDIR ${PG_HOME}/lib/postgres-xl
 
-RUN ./configure --enable-debug --enable-cassert CFLAGS='-O0 -g -DDEBUG' --prefix ${PG_LIB} && \
+RUN gcc -v
+RUN ./configure --enable-debug CFLAGS='-O0 -g -DDEBUG' --prefix ${PG_LIB} && \
     make && \
     cd contrib/pgxc_monitor && \
     make
@@ -49,7 +61,6 @@ ENV PATH=${PG_LIB}/bin:$PATH \
 
 COPY bin/* ${PG_LIB}/bin/
 COPY ci/ ./ci/
-
 
 
 

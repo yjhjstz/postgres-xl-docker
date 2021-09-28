@@ -7,7 +7,7 @@ bootstrapped=.bootstrapped
         -h "${PG_HOST}" \
         -p "${PG_PORT}" \
         -U "${PG_USER_HEALTHCHECK}" \
-        -c 'SELECT version()' &&
+        -c 'SELECT 1' &&
     touch "$bootstrapped"
 ) ||
 [ ! -f "$bootstrapped" ]

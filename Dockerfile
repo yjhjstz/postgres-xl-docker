@@ -28,7 +28,7 @@ USER ${PG_USER}
 
 WORKDIR ${PG_HOME}/lib/postgres-xl
 
-RUN ./configure --enable-debug --enable-cassert CFLAGS='-O0 -g -DDEBUG' --prefix ${PG_LIB} && \
+RUN ./configure --enable-debug --enable-cassert CFLAGS='-O0 -ggdb -DDEBUG' --prefix ${PG_LIB} && \
     make && \
     cd contrib/pgxc_monitor && \
     make

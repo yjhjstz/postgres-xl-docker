@@ -1,7 +1,7 @@
 #!/bin/bash -eu
 
 bootstrapped=.bootstrapped
-sleep_int_max=30
+sleep_int_max=300
 #-------------------------------------------------------------------------------
 if [ ! -f "$bootstrapped" ]; then
     sleep_int=$(((RANDOM % sleep_int_max) + 1))
@@ -34,7 +34,7 @@ fi
         -p "${PG_PORT}" \
         -U "${PG_USER_HEALTHCHECK}" \
         -d "${PG_USER_HEALTHCHECK}" \
-        -c 'INSERT INTO ping VALUES (DEFAULT)' &&
+        -c 'select 1' &&
     touch "$bootstrapped"
 ) ||
 [ ! -f "$bootstrapped" ]

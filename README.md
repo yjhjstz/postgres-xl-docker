@@ -204,6 +204,11 @@ CREATE TABLE disttab (col1 int, col2 int, col3 text) DISTRIBUTE BY HASH(col1);
 \d+ disttab
 CREATE TABLE repltab (col1 int, col2 int) DISTRIBUTE BY REPLICATION;
 \d+ repltab
+INSERT INTO disttab values(1, 2, 'foo');
+INSERT INTO disttab values(2, 3, 'foo');
+
+INSERT INTO disttab values(8, 9, 'foo');
+
 INSERT INTO disttab SELECT generate_series(1, 100), generate_series(101, 200), 'foo';
 INSERT INTO repltab SELECT generate_series(1, 100), generate_series(101, 200);
 SELECT count(*) FROM disttab;

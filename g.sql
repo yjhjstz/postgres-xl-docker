@@ -1,3 +1,4 @@
+drop graph g cascade;
 create graph g;
 select set_graph_path('g');
 
@@ -10,6 +11,6 @@ insert into person (id, properties) values (4, '{"name": "Nikki"}');
 insert into person (id, properties) values (5, '{"name": "Olive"}');
 insert into person (id, properties) values (6, '{"name": "Todd"}');
 
-insert into knows (id, start, end, properties) values (2, 1, 2, '{"data": "11"}');
-insert into knows (id, start, end, properties) values (3, 3, 4, '{"data": "12"}');
-insert into knows (id, start, end, properties) values (4, 5, 6, '{"data": "13"}');
+insert into knows (id, start, stop, properties) values (10, 1, 2, '{"data": "11"}');
+insert into knows (id, start, stop, properties) values (11, 3, 4, '{"data": "12"}');
+insert into knows (id, start, stop, properties) values (12, 5, 6, '{"data": "13"}');

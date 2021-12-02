@@ -10,8 +10,8 @@ ARG PG_USER=postgres
 
 
 RUN yum -y update;
-RUN yum install -y perl readline readline-devel zlib zlib-devel bison bison-devel flex flex-devel lz4 lz4-devel gcc
-RUN yum install -y gdb sudo vim file make cmake iproute rsync  perf strace golang wget
+RUN yum install -y perl readline readline-devel zlib zlib-devel bison bison-devel flex flex-devel lz4 lz4-devel gcc gcc-c++
+RUN yum install -y gdb sudo vim file make cmake iproute rsync  perf strace wget 
 
 RUN yum install centos-release-scl-rh -y 
 RUN yum install -y  rh-python36 rh-python36-python-setuptools rh-python36-python-pip-wheel net-tools
@@ -35,16 +35,18 @@ USER ${PG_USER}
 
 WORKDIR ${PG_HOME}/lib/postgres-xl
 #-DEXEC_NESTLOOPDEBUG -DEXEC_NESTLOOPVLEDEBUG
-RUN ./configure --enable-debug --enable-cassert CFLAGS='-O0 -ggdb -DDEBUG -DEXEC_NESTLOOPVLEDEBUG' --prefix ${PG_LIB} && \
+RUN ./configure --with-blocksize=32 --enable-debug --enable-cassert CFLAGS='-O0 -ggdb -DDEBUG' --prefix ${PG_LIB} && \
     make && \
     cd contrib/pgxc_monitor && \
-    make
+    make && cd ../quantum && make
 #-------------------------------------------------------------------------------
 USER root
 
 RUN make install && \
     cd contrib/pgxc_monitor && \
-    make install
+    make install && cd ../quantum && make install
+
+
 
 #-------------------------------------------------------------------------------
 USER ${PG_USER}

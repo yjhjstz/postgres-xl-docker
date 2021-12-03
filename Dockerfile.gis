@@ -1,0 +1,133 @@
+#===============================================================================
+# FROMFREEZE docker.io/library/debian:9
+#FROM docker.io/library/debian@sha256:d844caef45253dab4cb7543b5781f529c1c3f140fcf9cd6172e1d6cb616a51c3
+FROM centos7:coreset
+
+ARG PG_HOME=/var/lib/postgresql
+ARG PG_LIB=/usr/local/lib/postgresql
+ARG PG_USER=postgres
+#-------------------------------------------------------------------------------
+
+
+RUN yum -y update;
+RUN yum install -y perl readline readline-devel zlib zlib-devel bison bison-devel flex flex-devel lz4 lz4-devel gcc gcc-c++
+RUN yum install -y gdb sudo vim file make cmake iproute rsync  perf strace wget 
+
+RUN yum install centos-release-scl-rh -y 
+RUN yum install -y  rh-python36 rh-python36-python-setuptools rh-python36-python-pip-wheel net-tools
+#RUN scl enable rh-python36 bash
+SHELL ["scl", "enable", "rh-python36"]
+RUN pip -V && pip install --upgrade pip  -i http://pypi.douban.com/simple/ --trusted-host pypi.douban.com
+RUN pip install snap-stanford py-postgresql -i http://pypi.douban.com/simple/ --trusted-host pypi.douban.com
+
+#RUN mkdir /cores && chmod 777 /cores
+#RUN echo '/cores/core.%e.%p' | sudo tee /proc/sys/kernel/core_pattern
+
+RUN useradd ${PG_USER} -d ${PG_HOME} && \
+    mkdir -p ${PG_LIB} ${PG_HOME} && \
+    chown -R ${PG_USER}:${PG_USER} ${PG_LIB} ${PG_HOME}
+#-------------------------------------------------------------------------------
+WORKDIR ${PG_HOME}
+
+COPY --chown=postgres:postgres lib/ ./lib/
+#-------------------------------------------------------------------------------
+USER ${PG_USER}
+
+WORKDIR ${PG_HOME}/lib/postgres-xl
+#-DEXEC_NESTLOOPDEBUG -DEXEC_NESTLOOPVLEDEBUG
+RUN ./configure --with-blocksize=32 --enable-debug --enable-cassert CFLAGS='-O0 -ggdb -DDEBUG' --prefix ${PG_LIB} && \
+    make && \
+    cd contrib/pgxc_monitor && \
+    make && cd ../quantum && make
+#-------------------------------------------------------------------------------
+USER root
+
+RUN make install && \
+    cd contrib/pgxc_monitor && \
+    make install && cd ../quantum && make install
+
+
+RUN yum -y install gdal-python make automake libcurl-devel bzip2 bunzip2 python-devel libtool
+RUN yum install -y git autoconf m4 which libxml2 libxml2-devel byacc flex libxslt file
+
+
+ENV GEOS_VERSION=3.7.1
+ENV GDAL_VERSION=2.4.0
+ENV PROJ4_VERSION=5.2.0
+ENV POSTGIS_VERSION=3.0.0
+
+RUN mkdir -p "/tmp/geos-${GEOS_VERSION}-build" && \
+cd "/tmp/geos-${GEOS_VERSION}-build" && \
+curl -o "geos-${GEOS_VERSION}.tar.bz2" \
+    "http://download.osgeo.org/geos/geos-${GEOS_VERSION}.tar.bz2" \
+    && bunzip2 "geos-${GEOS_VERSION}.tar.bz2" \
+    && tar xvf "geos-${GEOS_VERSION}.tar" && \
+cd "/tmp/geos-${GEOS_VERSION}-build/geos-${GEOS_VERSION}" && \
+./configure --prefix=/usr/local/geos && \
+
+# Make in parallel with 2x the number of processors.
+make -j $(( 2 * $(cat /proc/cpuinfo | egrep ^processor | wc -l) )) \
+ && make install \
+ && cd / && rm -rf /tmp/geos-${GEOS_VERSION}-build
+
+
+# Compiltation worf for proj4
+RUN mkdir -p "/tmp/proj-${PROJ4_VERSION}-build" && \
+cd "/tmp/proj-${PROJ4_VERSION}-build" && \
+curl -o "proj-${PROJ4_VERSION}.tar.gz" \
+    "http://download.osgeo.org/proj/proj-${PROJ4_VERSION}.tar.gz" \
+    && tar xfz "proj-${PROJ4_VERSION}.tar.gz" && \
+cd "/tmp/proj-${PROJ4_VERSION}-build/proj-${PROJ4_VERSION}" && \
+./configure --prefix=/usr/local/proj4 && \
+
+# Make in parallel with 2x the number of processors.
+make -j $(( 2 * $(cat /proc/cpuinfo | egrep ^processor | wc -l) )) \
+ && make install \
+ && cd / && rm -rf /tmp/proj-${PROJ4_VERSION}-build
+
+
+RUN mkdir -p "/tmp/gdal-${GDAL_VERSION}-build" && \
+cd "/tmp/gdal-${GDAL_VERSION}-build" && \
+curl -o "gdal-${GDAL_VERSION}.tar.gz" \
+    "http://download.osgeo.org/gdal/${GDAL_VERSION}/gdal-${GDAL_VERSION}.tar.gz" \
+    && tar xfz "gdal-${GDAL_VERSION}.tar.gz" && \
+cd "/tmp/gdal-${GDAL_VERSION}-build/gdal-${GDAL_VERSION}" && \
+./configure --prefix=/usr/local/gdal \
+            --with-curl=yes \
+            --with-static-proj4=/usr/local/proj4 \
+            --with-python=yes && \
+# Make in parallel with 2x the number of processors.
+make -j $(( 2 * $(cat /proc/cpuinfo | egrep ^processor | wc -l) )) \
+ && make install \
+ && cd / && rm -rf /tmp/gdal-${GDAL_VERSION}-build
+
+
+RUN mkdir -p "/tmp/postgis-${POSTGIS_VERSION}-build" && \
+cd "/tmp/postgis-${POSTGIS_VERSION}-build" && \
+git clone https://github.com.cnpmjs.org/postgis/postgis.git
+
+RUN cd "/tmp/postgis-${POSTGIS_VERSION}-build/postgis"  && \
+git checkout origin/stable-3.0 && ./autogen.sh && \
+./configure --with-pgconfig=${PG_LIB}/bin/pg_config --with-geosconfig=/usr/local/geos/bin/geos-config --with-projdir=/usr/local/proj4 --with-gdalconfig=/usr/local/gdal/bin/gdal-config --without-protobuf
+
+
+RUN cd "/tmp/postgis-${POSTGIS_VERSION}-build/postgis" && make install &&  cd / && rm -rf /tmp/postgis-${POSTGIS_VERSION}-build
+
+
+#-------------------------------------------------------------------------------
+USER ${PG_USER}
+
+WORKDIR ${PG_HOME}
+
+ENV PATH=${PG_LIB}/bin:$PATH \
+    PGDATA=${PG_HOME}/data \
+    PG_USER_HEALTHCHECK=_healthcheck
+
+COPY bin/* ${PG_LIB}/bin/
+COPY ci/ ./ci/
+
+
+ENV LD_LIBRARY_PATH=${PG_LIB}/lib:/usr/local/proj4/lib:/usr/local/gdal/lib:/usr/local/geos/lib:$LD_LIBRARY_PATH
+
+VOLUME ${PG_HOME}
+#===============================================================================

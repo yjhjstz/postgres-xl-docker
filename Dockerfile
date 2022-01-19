@@ -9,16 +9,14 @@ ARG PG_USER=postgres
 #-------------------------------------------------------------------------------
 
 
-RUN yum -y update;
+RUN yum -y update
 RUN yum install -y perl readline readline-devel zlib zlib-devel bison bison-devel flex flex-devel lz4 lz4-devel gcc gcc-c++
-RUN yum install -y gdb sudo vim file make cmake iproute rsync  perf strace wget 
+RUN yum install -y gdb sudo vim file make cmake iproute rsync  perf strace wget python-pip
 
-RUN yum install centos-release-scl-rh -y 
-RUN yum install -y  rh-python36 rh-python36-python-setuptools rh-python36-python-pip-wheel net-tools
-#RUN scl enable rh-python36 bash
-SHELL ["scl", "enable", "rh-python36"]
-RUN pip -V && pip install --upgrade pip  -i http://pypi.douban.com/simple/ --trusted-host pypi.douban.com
-RUN pip install snap-stanford py-postgresql -i http://pypi.douban.com/simple/ --trusted-host pypi.douban.com
+#RUN pip install --upgrade pip
+RUN pip install psycopg2==2.7.3.1
+#RUN pip install --upgrade pip  -i http://pypi.douban.com/simple/ --trusted-host pypi.douban.com
+#RUN pip install psycopg2 -i http://pypi.douban.com/simple/ --trusted-host pypi.douban.com
 
 #RUN mkdir /cores && chmod 777 /cores
 #RUN echo '/cores/core.%e.%p' | sudo tee /proc/sys/kernel/core_pattern
@@ -38,13 +36,13 @@ WORKDIR ${PG_HOME}/lib/postgres-xl
 RUN ./configure --with-blocksize=32 --enable-debug --enable-cassert CFLAGS='-O0 -ggdb -DDEBUG' --prefix ${PG_LIB} && \
     make && \
     cd contrib/pgxc_monitor && \
-    make && cd ../quantum && make
+    make && cd ../pg_plan_tree_dot && make
 #-------------------------------------------------------------------------------
 USER root
 
 RUN make install && \
     cd contrib/pgxc_monitor && \
-    make install && cd ../quantum && make install
+    make install && cd ../pg_plan_tree_dot && make install
 
 
 
